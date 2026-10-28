@@ -10,7 +10,6 @@ de WSL (por ejemplo `~/licoreria`) para mayor velocidad.
 
 ## Puesta en marcha
 ```bash
-unzip licoreria_rails.zip && cd licoreria_rails
 docker compose up -d --build
 docker compose logs -f app   # primera vez: instala gemas, crea tablas y carga datos demo
 ```
@@ -22,12 +21,6 @@ Cuando aparezca "Aplicación lista":
 | phpMyAdmin   | http://localhost:8081 |
 | MySQL (host) | localhost:3307        |
 
-## Usuarios de demostración
-| Rol                     | Correo                    | Contraseña       |
-|-------------------------|---------------------------|------------------|
-| Administrador           | admin@licoreria.test      | Admin12345!      |
-| Staff / Vendedor        | staff@licoreria.test      | Staff12345!      |
-| Encargado de inventario | inventario@licoreria.test | Inventario12345! |
 
 Cambie estas contraseñas antes de usar el sistema en producción.
 
