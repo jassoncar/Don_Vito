@@ -1,0 +1,19 @@
+<% content_for :title, "Mi perfil" %>
+<h1 class="title-h1 h3 mb-3">Mi perfil</h1>
+
+<% if @user.errors.any? %>
+  <div class="alert alert-danger"><ul class="mb-0"><% @user.errors.full_messages.each do |m| %><li><%= m %></li><% end %></ul></div>
+<% end %>
+
+<%= form_with url: profile_path, method: :patch, class: "card card-body", style: "max-width: 640px" do %>
+  <div class="mb-3"><label class="form-label">Correo electrónico</label><input type="email" class="form-control" value="<%= @user.email %>" disabled></div>
+  <div class="mb-3"><label class="form-label" for="name">Nombre</label><%= text_field_tag :name, @user.name, class: "form-control", required: true %></div>
+  <hr>
+  <p class="text-muted small">Para cambiar la contraseña complete los siguientes campos; de lo contrario déjelos vacíos.</p>
+  <div class="mb-3"><label class="form-label" for="current_password">Contraseña actual</label><%= password_field_tag :current_password, nil, class: "form-control", autocomplete: "current-password" %></div>
+  <div class="row g-3">
+    <div class="col-md-6"><label class="form-label" for="password">Nueva contraseña</label><%= password_field_tag :password, nil, class: "form-control", autocomplete: "new-password" %></div>
+    <div class="col-md-6"><label class="form-label" for="password_confirmation">Confirmar contraseña</label><%= password_field_tag :password_confirmation, nil, class: "form-control", autocomplete: "new-password" %></div>
+  </div>
+  <div class="mt-4"><button class="btn btn-primary"><i class="bi bi-check-lg"></i> Guardar cambios</button></div>
+<% end %>

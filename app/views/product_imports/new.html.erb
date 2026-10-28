@@ -1,0 +1,81 @@
+<% content_for :title, "Importar productos" %>
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h1 class=" title-h1 h3 mb-0">Importar productos desde un archivo</h1>
+  <a href="<%= products_path %>" class="btn btn-outline-secondary">Volver a productos</a>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <%= form_with url: product_import_path, method: :post, multipart: true, class: "card card-body" do %>
+      <h2 class="h5">1. Suba su archivo</h2>
+      <p class="text-muted small">Formatos admitidos: <strong>.xlsx</strong> y <strong>.csv</strong> (máx. 5 MB y 2000 filas).</p>
+      <div class="mb-3">
+        <%= file_field_tag :file, accept: ".xlsx,.csv", class: "form-control", required: true %>
+      </div>
+      <% if can?("products.edit") %>
+        <div class="form-check mb-3">
+          <%= check_box_tag :update_existing, "1", true, class: "form-check-input" %>
+          <label class="form-check-label" for="update_existing">Actualizar los productos que ya existen (según el SKU)</label>
+        </div>
+      <% end %>
+      <button class="btn btn-primary"><i class="bi bi-upload"></i> Importar</button>
+    <% end %>
+
+    <div class="card card-body mt-3">
+      <h2 class="h5">¿No tiene el archivo listo?</h2>
+      <p class="text-muted small mb-2">Descargue la plantilla con las columnas y dos filas de ejemplo.</p>
+      <div class="d-flex gap-2">
+        <a class="btn btn-outline-success btn-sm" href="<%= product_import_template_path(formato: "xlsx") %>"><i class="bi bi-file-earmark-excel"></i> Plantilla Excel</a>
+        <a class="btn btn-outline-secondary btn-sm" href="<%= product_import_template_path(formato: "csv") %>"><i class="bi bi-filetype-csv"></i> Plantilla CSV</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <% if @result %>
+      <div class="card mb-3">
+        <div class="card-header bg-white fw-semibold">Resultado de la importación</div>
+        <div class="card-body">
+          <div class="row text-center g-2">
+            <div class="col"><div class="fs-3 fw-semibold text-success"><%= @result.created %></div><div class="small text-muted">Creados</div></div>
+            <div class="col"><div class="fs-3 fw-semibold"><%= @result.updated %></div><div class="small text-muted">Actualizados</div></div>
+            <div class="col"><div class="fs-3 fw-semibold text-muted"><%= @result.skipped %></div><div class="small text-muted">Omitidos</div></div>
+            <div class="col"><div class="fs-3 fw-semibold text-danger"><%= @result.errors.size %></div><div class="small text-muted">Con error</div></div>
+          </div>
+        </div>
+        <% if @result.errors.any? %>
+          <div class="table-responsive" style="max-height: 280px; overflow-y: auto">
+            <table class="table table-sm mb-0">
+              <thead class="table-light"><tr><th style="width:90px">Fila</th><th>Problema</th></tr></thead>
+              <tbody><% @result.errors.each do |error| %><tr><td><%= error[:row] %></td><td><%= error[:message] %></td></tr><% end %></tbody>
+            </table>
+          </div>
+          <div class="card-footer bg-white small text-muted">Corrija esas filas en su archivo y vuelva a importarlo: los productos ya cargados se actualizan, no se duplican.</div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="card">
+      <div class="card-header bg-white fw-semibold">Columnas del archivo</div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead class="table-light"><tr><th>Columna</th><th>Obligatoria</th><th>Notas</th></tr></thead>
+          <tbody>
+            <tr><td>SKU</td><td>Sí</td><td>Identifica al producto; si ya existe se actualiza.</td></tr>
+            <tr><td>Nombre</td><td>Sí</td><td></td></tr>
+            <tr><td>Categoría</td><td>Sí</td><td>Si no existe, se crea.</td></tr>
+            <tr><td>Precio</td><td>Sí</td><td>Precio de venta.</td></tr>
+            <tr><td>Marca, Proveedor</td><td>No</td><td>Si no existen, se crean.</td></tr>
+            <tr><td>Costo</td><td>No</td><td>Por defecto 0.</td></tr>
+            <tr><td>Impuesto %</td><td>No</td><td>Por defecto 15.</td></tr>
+            <tr><td>Stock mínimo</td><td>No</td><td>Por defecto 5.</td></tr>
+            <tr><td>Stock inicial</td><td>No</td><td>Solo para productos nuevos.</td></tr>
+            <tr><td>Código de barras, Descripción</td><td>No</td><td></td></tr>
+            <tr><td>Activo</td><td>No</td><td>Sí / No (por defecto Sí).</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer bg-white small text-muted">Las imágenes se agregan después, editando cada producto.</div>
+    </div>
+  </div>
+</div>

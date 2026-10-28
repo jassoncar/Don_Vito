@@ -1,0 +1,41 @@
+es:
+  activerecord:
+    models:
+      product: Producto
+      user: Usuario
+      role: Rol
+      category: Categoría
+      brand: Marca
+      supplier: Proveedor
+      customer: Cliente
+    attributes:
+      product:
+        sku: SKU
+        barcode: Código de barras
+        name: Nombre
+        description: Descripción
+        category: Categoría
+        category_id: Categoría
+        cost_price: Precio de costo
+        sale_price: Precio de venta
+        tax_rate: Impuesto
+        min_stock: Stock mínimo
+        initial_stock: Stock inicial
+      user:
+        name: Nombre
+        email: Correo electrónico
+        password: Contraseña
+        role: Rol
+      role:
+        name: Nombre
+        slug: Identificador
+      category:
+        name: Nombre
+      brand:
+        name: Nombre
+      supplier:
+        name: Nombre
+        email: Correo electrónico
+      customer:
+        name: Nombre
+        email: Correo electrónico

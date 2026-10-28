@@ -1,0 +1,82 @@
+<% title = @record.persisted? ? "Editar #{@singular.downcase}" : "Nuevo #{@singular.downcase}" %>
+<% content_for :title, title %>
+<h1 class="title-h1 h3 mb-3"><%= title %></h1>
+
+<% if @record.errors.any? %>
+  <div class="alert alert-danger">
+    <strong>Revise los siguientes errores:</strong>
+    <ul class="mb-0"><% @record.errors.full_messages.each do |message| %><li><%= message %></li><% end %></ul>
+  </div>
+<% end %>
+
+<% url = @record.persisted? ? url_for(action: :update, id: @record.id) : url_for(action: :create) %>
+<%= form_with model: @record, scope: @record.model_name.param_key, url: url, method: (@record.persisted? ? :patch : :post), class: "card card-body" do |f| %>
+  <div class="row g-3">
+    <% form_fields.each do |name, field| %>
+      <div class="col-md-<%= field[:col] || 6 %>">
+        <% if field[:type] == :checkbox %>
+          <div class="form-check form-switch">
+            <%= f.check_box name, class: "form-check-input", role: "switch" %>
+            <%= f.label name, field[:label], class: "form-check-label" %>
+          </div>
+        <% elsif field[:type] == :file %>
+          <%= f.label name, field[:label], class: "form-label" %>
+          <div class="d-flex align-items-center gap-3">
+            <% if @record.respond_to?(:image_url) && @record.image_url %>
+              <img src="<%= @record.image_url %>" alt="Imagen actual" class="rounded border" style="width:96px;height:96px;object-fit:contain;background:#fff" id="img-current">
+            <% end %>
+            <img src="" alt="Vista previa" class="rounded border d-none" style="width:96px;height:96px;object-fit:contain;background:#fff" id="img-preview">
+            <%= f.file_field name, accept: "image/jpeg,image/png,image/webp", class: "form-control #{input_class(@record, name)}", onchange: "previewImage(this)" %>
+          </div>
+          <%= field_error(@record, name) %>
+        <% elsif field[:type] == :select %>
+          <%= f.label name, field[:label], class: "form-label" %>
+          <%= f.select name, field[:options], { include_blank: field[:placeholder] || "Seleccione..." }, class: "form-select #{input_class(@record, name)}" %>
+          <%= field_error(@record, name) %>
+        <% elsif field[:type] == :textarea %>
+          <%= f.label name, field[:label], class: "form-label" %>
+          <%= f.text_area name, rows: 3, class: "form-control #{input_class(@record, name)}" %>
+          <%= field_error(@record, name) %>
+        <% elsif field[:type] == :password %>
+          <%= f.label name, field[:label], class: "form-label" %>
+          <%= f.password_field name, autocomplete: "new-password", class: "form-control #{input_class(@record, name)}" %>
+          <%= field_error(@record, name) %>
+        <% elsif field[:type] == :number %>
+          <%= f.label name, field[:label], class: "form-label" %>
+          <%= f.number_field name, step: field[:step], class: "form-control #{input_class(@record, name)}" %>
+          <%= field_error(@record, name) %>
+        <% elsif field[:type] == :email %>
+          <%= f.label name, field[:label], class: "form-label" %>
+          <%= f.email_field name, class: "form-control #{input_class(@record, name)}" %>
+          <%= field_error(@record, name) %>
+        <% else %>
+          <%= f.label name, field[:label], class: "form-label" %>
+          <%= f.text_field name, class: "form-control #{input_class(@record, name)}" %>
+          <%= field_error(@record, name) %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="mt-4 d-flex gap-2">
+    <button class="btn btn-primary"><i class="bi bi-check-lg"></i> Guardar</button>
+    <a href="<%= url_for(action: :index) %>" class="btn btn-outline-secondary">Cancelar</a>
+  </div>
+<% end %>
+
+<% if form_fields.values.any? { |f| f[:type] == :file } %>
+  <% content_for :scripts do %>
+    <script>
+      function previewImage(input) {
+        const preview = document.getElementById('img-preview');
+        const current = document.getElementById('img-current');
+        const file = input.files && input.files[0];
+        if (!file) { preview.classList.add('d-none'); if (current) current.classList.remove('d-none'); return; }
+        if (file.size > 2 * 1024 * 1024) { alert('La imagen supera los 2 MB.'); input.value = ''; return; }
+        preview.src = URL.createObjectURL(file);
+        preview.classList.remove('d-none');
+        if (current) current.classList.add('d-none');
+      }
+    </script>
+  <% end %>
+<% end %>

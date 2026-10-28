@@ -1,0 +1,21 @@
+<% content_for :title, "Nuevo ajuste de inventario" %>
+<h1 class="title-h1 h3 mb-3">Nuevo ajuste de inventario</h1>
+<%= form_with url: adjustments_path, method: :post, class: "card card-body", style: "max-width: 760px" do %>
+  <div class="row g-3">
+    <div class="col-12">
+      <label class="form-label" for="product_id">Producto</label>
+      <%= select_tag :product_id, options_for_select(@products.map { |p| ["#{p.sku} - #{p.name} (stock: #{p.stock})", p.id] }, params[:product_id].to_i), include_blank: "Seleccione...", class: "form-select", required: true %>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="kind">Tipo de ajuste</label>
+      <%= select_tag :kind, options_for_select([["Entrada (suma stock)", "in"], ["Salida (resta stock)", "out"]], params[:kind]), class: "form-select", required: true %>
+    </div>
+    <div class="col-md-3"><label class="form-label" for="quantity">Cantidad</label><%= number_field_tag :quantity, params[:quantity] || 1, min: 1, step: 1, class: "form-control", required: true %></div>
+    <div class="col-md-5"><label class="form-label" for="reason">Motivo</label><%= select_tag :reason, options_for_select(@reasons, params[:reason]), class: "form-select", required: true %></div>
+    <div class="col-12"><label class="form-label" for="notes">Notas</label><%= text_field_tag :notes, params[:notes], class: "form-control", maxlength: 500 %></div>
+  </div>
+  <div class="mt-4 d-flex gap-2">
+    <button class="btn btn-primary"><i class="bi bi-check-lg"></i> Registrar ajuste</button>
+    <a href="<%= adjustments_path %>" class="btn btn-outline-secondary">Cancelar</a>
+  </div>
+<% end %>

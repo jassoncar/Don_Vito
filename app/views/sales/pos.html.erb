@@ -1,0 +1,247 @@
+<% content_for :title, "Punto de venta" %>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card card-body mb-3">
+      <input id="search" type="text" class="form-control form-control-lg" autocomplete="off" autofocus
+             placeholder="Buscar por nombre o SKU, o escanee el código de barras y presione Enter">
+    </div>
+    <div id="results" class="row g-2"></div>
+  </div>
+
+  <div class="col-lg-5">
+    <%= form_with url: sales_path, method: :post, id: "sale-form", class: "card" do %>
+      <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-cart3"></i> Venta actual</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="clear-cart">Vaciar</button>
+      </div>
+
+      <div class="table-responsive" style="max-height: 320px; overflow-y: auto">
+        <table class="table table-sm align-middle mb-0">
+          <thead class="table-light"><tr><th>Producto</th><th style="width:85px">Cant.</th><th class="text-end">Total</th><th></th></tr></thead>
+          <tbody id="cart"></tbody>
+        </table>
+      </div>
+
+      <div class="card-body border-top">
+        <div class="d-flex justify-content-between"><span>Subtotal</span><span class="num" id="t-subtotal">0.00</span></div>
+        <div class="d-flex justify-content-between"><span>Impuesto</span><span class="num" id="t-tax">0.00</span></div>
+        <div class="d-flex justify-content-between align-items-center">
+          <span>Descuento</span>
+          <input type="number" min="0" step="0.01" name="discount" id="discount" value="<%= @form[:discount].presence || 0 %>" class="form-control form-control-sm text-end" style="width:120px">
+        </div>
+        <hr class="my-2">
+        <div class="d-flex justify-content-between fs-4 fw-bold"><span>Total</span><span class="num" id="t-total">0.00</span></div>
+      </div>
+
+      <div class="card-body border-top">
+        <div class="row g-2">
+          <div class="col-12">
+            <label class="form-label small mb-1">Cliente (opcional)</label>
+            <%= select_tag :customer_id, options_from_collection_for_select(@customers, :id, :name, @form[:customer_id]), include_blank: "Consumidor final", class: "form-select" %>
+          </div>
+          <div class="col-6">
+            <label class="form-label small mb-1">Método de pago</label>
+            <%= select_tag :payment_method, options_for_select(Sale::PAYMENT_METHODS.map { |k, v| [v, k] }, @form[:payment_method] || "cash"), class: "form-select" %>
+          </div>
+          <div class="col-6" id="paid-group">
+            <label class="form-label small mb-1">Monto recibido</label>
+            <input type="number" min="0" step="0.01" name="amount_paid" id="amount_paid" value="<%= @form[:amount_paid] %>" class="form-control text-end">
+          </div>
+          <div class="col-12" id="change-group">
+            <div class="d-flex justify-content-between"><span class="text-muted">Cambio</span><span class="num fw-semibold" id="t-change">0.00</span></div>
+          </div>
+
+          <div class="col-12 d-none" id="pay-transfer">
+            <div class="border rounded p-2" style="background:#FAF7EE">
+              <div class="small fw-semibold mb-2"><i class="bi bi-bank"></i> Datos de la transferencia</div>
+              <div class="row g-2">
+                <div class="col-sm-6">
+                  <label class="form-label small mb-1">Banco de origen *</label>
+                  <input type="text" name="transfer_bank" list="bank-list" value="<%= @form[:transfer_bank] %>" class="form-control form-control-sm" maxlength="100" autocomplete="off">
+                  <datalist id="bank-list"><% Sale::BANK_SUGGESTIONS.each do |bank| %><option value="<%= bank %>"><% end %></datalist>
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label small mb-1">N.º de referencia *</label>
+                  <input type="text" name="transfer_reference" value="<%= @form[:transfer_reference] %>" class="form-control form-control-sm" maxlength="100" autocomplete="off">
+                </div>
+                <div class="col-12">
+                  <label class="form-label small mb-1">Titular de la cuenta (opcional)</label>
+                  <input type="text" name="transfer_holder" value="<%= @form[:transfer_holder] %>" class="form-control form-control-sm" maxlength="150" autocomplete="off">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 d-none" id="pay-card">
+            <div class="border rounded p-2" style="background:#FAF7EE">
+              <div class="small fw-semibold mb-2"><i class="bi bi-credit-card"></i> Datos del voucher de tarjeta</div>
+              <div class="row g-2">
+                <div class="col-sm-6">
+                  <label class="form-label small mb-1">Marca *</label>
+                  <%= select_tag :card_brand, options_for_select(Sale::CARD_BRANDS, @form[:card_brand]), include_blank: "Seleccione...", class: "form-select form-select-sm" %>
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label small mb-1">Últimos 4 dígitos *</label>
+                  <input type="text" name="card_last4" value="<%= @form[:card_last4] %>" class="form-control form-control-sm" inputmode="numeric" pattern="\d{4}" maxlength="4" autocomplete="off">
+                </div>
+                <div class="col-12">
+                  <label class="form-label small mb-1">Código de autorización *</label>
+                  <input type="text" name="card_auth" value="<%= @form[:card_auth] %>" class="form-control form-control-sm" maxlength="100" autocomplete="off">
+                </div>
+              </div>
+              <div class="form-text">Por seguridad no se piden ni se guardan el número completo, el vencimiento ni el CVV.</div>
+            </div>
+          </div>
+          <div class="col-12"><input type="text" name="notes" value="<%= @form[:notes] %>" class="form-control form-control-sm" placeholder="Notas (opcional)"></div>
+        </div>
+        <button class="btn btn-primary btn-lg w-100 mt-3" id="submit-btn"><i class="bi bi-check2-circle"></i> Cobrar</button>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<% content_for :scripts do %>
+<script>
+  const searchUrl = <%= raw pos_search_path.to_json %>;
+  const symbol = <%= raw Setting.get("currency_symbol", "C$").to_json %>;
+  const restore = <%= raw @restore.to_json %>;
+
+  const cart = new Map();
+  const $ = id => document.getElementById(id);
+  const round2 = x => Math.round((x + Number.EPSILON) * 100) / 100;
+  const fmt = n => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let timer = null;
+
+  function fetchProducts(q) {
+    return fetch(searchUrl + '?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' } }).then(r => r.json());
+  }
+
+  function loadResults(q) { fetchProducts(q).then(renderResults); }
+
+  function renderResults(list) {
+    const box = $('results');
+    if (!list.length) {
+      box.innerHTML = '<div class="col-12"><div class="alert alert-light border mb-0">Sin resultados con stock disponible.</div></div>';
+      return;
+    }
+    box.innerHTML = list.map(p =>
+      '<div class="col-sm-6"><button type="button" class="card card-body text-start w-100 pos-card" data-id="' + p.id + '">' +
+      (p.image ? '<img class="pos-img" src="' + esc(p.image) + '" alt="">' : '<div class="pos-img-ph"><i class="bi bi-image"></i></div>') +
+      '<div class="fw-semibold">' + esc(p.name) + '</div>' +
+      '<div class="d-flex justify-content-between small text-muted"><span>' + esc(p.sku) + '</span><span>Stock: ' + p.stock + '</span></div>' +
+      '<div class="fs-5 fw-bold" style="color:var(--gold)">' + symbol + ' ' + fmt(p.price) + '</div></button></div>'
+    ).join('');
+    box.querySelectorAll('button[data-id]').forEach(btn => btn.addEventListener('click', () => {
+      const p = list.find(x => String(x.id) === btn.dataset.id);
+      if (p) addToCart(p);
+    }));
+  }
+
+  function addToCart(p) {
+    const current = cart.get(p.id);
+    if (current) {
+      if (current.qty < current.stock) current.qty++;
+      else alert('No hay más stock disponible de «' + p.name + '».');
+    } else {
+      cart.set(p.id, { id: p.id, name: p.name, price: p.price, tax_rate: p.tax_rate, stock: p.stock, image: p.image, qty: 1 });
+    }
+    renderCart();
+  }
+
+  function renderCart() {
+    const tbody = $('cart');
+    if (!cart.size) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Agregue productos a la venta.</td></tr>';
+      totals();
+      return;
+    }
+    let i = 0;
+    tbody.innerHTML = '';
+    cart.forEach(item => {
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td><div class="d-flex align-items-center gap-2">' +
+        (item.image ? '<img class="thumb" style="width:34px;height:34px" src="' + esc(item.image) + '" alt="">' : '') +
+        '<div><div class="small fw-semibold">' + esc(item.name) + '</div><div class="small text-muted">' + symbol + ' ' + fmt(item.price) + '</div></div></div>' +
+        '<input type="hidden" name="items[' + i + '][product_id]" value="' + item.id + '"></td>' +
+        '<td><input type="number" min="1" max="' + item.stock + '" step="1" name="items[' + i + '][quantity]" value="' + item.qty + '" class="form-control form-control-sm"></td>' +
+        '<td class="text-end num js-line"></td>' +
+        '<td><button type="button" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-lg"></i></button></td>';
+      tbody.appendChild(tr);
+      i++;
+      const qtyInput = tr.querySelector('input[type=number]');
+      qtyInput.addEventListener('input', () => {
+        let q = parseInt(qtyInput.value, 10);
+        if (isNaN(q) || q < 1) q = 1;
+        if (q > item.stock) { q = item.stock; qtyInput.value = q; }
+        item.qty = q;
+        totals();
+      });
+      tr.querySelector('button').addEventListener('click', () => { cart.delete(item.id); renderCart(); });
+    });
+    totals();
+  }
+
+  function togglePayment(method) {
+    const sections = { transfer: $('pay-transfer'), card: $('pay-card') };
+    Object.keys(sections).forEach(key => {
+      const active = key === method;
+      sections[key].classList.toggle('d-none', !active);
+      sections[key].querySelectorAll('input, select').forEach(el => {
+        el.disabled = !active;
+        el.required = active && !(el.name === 'transfer_holder');
+      });
+    });
+  }
+
+  function totals() {
+    let subtotal = 0, tax = 0, idx = 0;
+    const lines = document.querySelectorAll('#cart .js-line');
+    cart.forEach(item => {
+      const lineSub = round2(item.price * item.qty);
+      const lineTax = round2(lineSub * item.tax_rate / 100);
+      subtotal += lineSub; tax += lineTax;
+      if (lines[idx]) lines[idx].textContent = fmt(round2(lineSub + lineTax));
+      idx++;
+    });
+    const gross = round2(subtotal + tax);
+    const discount = Math.min(Math.max(parseFloat($('discount').value) || 0, 0), gross);
+    const total = round2(gross - discount);
+    $('t-subtotal').textContent = fmt(round2(subtotal));
+    $('t-tax').textContent = fmt(round2(tax));
+    $('t-total').textContent = fmt(total);
+
+    const method = $('payment_method').value;
+    const isCash = method === 'cash';
+    togglePayment(method);
+    $('paid-group').style.display = isCash ? '' : 'none';
+    $('change-group').style.display = isCash ? '' : 'none';
+    const paid = parseFloat($('amount_paid').value);
+    $('t-change').textContent = fmt(isCash && !isNaN(paid) ? Math.max(0, round2(paid - total)) : 0);
+  }
+
+  $('search').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => loadResults($('search').value.trim()), 250); });
+  $('search').addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const q = $('search').value.trim();
+    if (!q) return;
+    fetchProducts(q).then(list => {
+      const exact = list.find(p => p.barcode === q || p.sku.toLowerCase() === q.toLowerCase()) || (list.length === 1 ? list[0] : null);
+      if (exact) { addToCart(exact); $('search').value = ''; loadResults(''); } else { renderResults(list); }
+    });
+  });
+
+  ['discount', 'amount_paid', 'payment_method'].forEach(id => { $(id).addEventListener('input', totals); $(id).addEventListener('change', totals); });
+  $('clear-cart').addEventListener('click', () => { cart.clear(); renderCart(); });
+  $('sale-form').addEventListener('submit', e => {
+    if (!cart.size) { e.preventDefault(); alert('Agregue al menos un producto a la venta.'); return; }
+    $('submit-btn').disabled = true;
+  });
+
+  restore.forEach(p => cart.set(p.id, p));
+  renderCart();
+  loadResults('');
+</script>
+<% end %>

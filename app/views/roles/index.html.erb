@@ -1,0 +1,28 @@
+<% content_for :title, "Roles y permisos" %>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="title-h1 h3 mb-0">Roles y permisos</h1>
+  <% if can?("roles.create") %><a href="<%= new_role_path %>" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nuevo rol</a><% end %>
+</div>
+
+<div class="card"><div class="table-responsive">
+  <table class="table table-hover align-middle mb-0">
+    <thead class="table-light"><tr><th>Rol</th><th>Descripción</th><th class="text-center">Usuarios</th><th class="text-center">Permisos</th><th class="text-end">Acciones</th></tr></thead>
+    <tbody>
+      <% @roles.each do |role| %>
+        <tr>
+          <td class="fw-semibold"><%= role.name %> <% if role.admin? %><span class="badge bg-dark">Acceso total</span><% end %></td>
+          <td><%= role.description.presence || "—" %></td>
+          <td class="text-center"><%= role.users.size %></td>
+          <td class="text-center"><%= role.admin? ? "Todos" : role.permissions.size %></td>
+          <td class="text-end text-nowrap">
+            <% if can?("roles.edit") %><a href="<%= edit_role_path(role) %>" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a><% end %>
+            <% if can?("roles.delete") && !role.admin? %>
+              <%= button_to role_path(role), method: :delete, class: "btn btn-sm btn-outline-danger",
+                            form: { class: "d-inline", onsubmit: "return confirm('¿Eliminar este rol?')" } do %><i class="bi bi-trash"></i><% end %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div></div>

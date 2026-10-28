@@ -1,0 +1,13 @@
+<% if @pagination && @pagination[:pages] > 1 %>
+  <% page = @pagination[:page]; pages = @pagination[:pages] %>
+  <% link = ->(n) { "#{request.path}?#{request.query_parameters.merge('page' => n).to_query}" } %>
+  <nav>
+    <ul class="pagination pagination-sm mb-0">
+      <li class="page-item <%= 'disabled' if page == 1 %>"><a class="page-link" href="<%= link.call(page - 1) %>">&laquo; Anterior</a></li>
+      <% ([page - 2, 1].max..[page + 2, pages].min).each do |n| %>
+        <li class="page-item <%= 'active' if n == page %>"><a class="page-link" href="<%= link.call(n) %>"><%= n %></a></li>
+      <% end %>
+      <li class="page-item <%= 'disabled' if page == pages %>"><a class="page-link" href="<%= link.call(page + 1) %>">Siguiente &raquo;</a></li>
+    </ul>
+  </nav>
+<% end %>

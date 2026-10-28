@@ -1,0 +1,13 @@
+<% content_for :title, "Configuración" %>
+<h1 class="title-h1 h3 mb-3">Configuración del negocio</h1>
+<%= form_with url: settings_path, method: :patch, class: "card card-body", style: "max-width: 760px" do %>
+  <div class="row g-3">
+    <% @labels.each do |key, label| %>
+      <div class="col-md-<%= %w[company_address receipt_footer].include?(key) ? 12 : 6 %>">
+        <label class="form-label" for="<%= key %>"><%= label %></label>
+        <%= text_field_tag key, @values[key], class: "form-control" %>
+      </div>
+    <% end %>
+  </div>
+  <div class="mt-4"><button class="btn btn-primary"><i class="bi bi-check-lg"></i> Guardar</button></div>
+<% end %>

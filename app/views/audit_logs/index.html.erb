@@ -1,0 +1,33 @@
+<% content_for :title, "Auditoría" %>
+<h1 class="title-h1 h3 mb-3">Auditoría</h1>
+<form method="get" class="card card-body mb-3"><div class="row g-2">
+  <div class="col-md-3"><input type="text" name="q" value="<%= params[:q] %>" class="form-control" placeholder="Buscar en la descripción"></div>
+  <div class="col-md-2"><%= select_tag :user_id, options_from_collection_for_select(@users, :id, :name, params[:user_id]), include_blank: "Todos los usuarios", class: "form-select" %></div>
+  <div class="col-md-2"><%= select_tag :action_filter, options_for_select(AuditLog::ACTIONS.map { |k, v| [v, k] }, params[:action_filter]), include_blank: "Todas las acciones", class: "form-select" %></div>
+  <div class="col-md-2"><input type="date" name="from" value="<%= params[:from] %>" class="form-control"></div>
+  <div class="col-md-2"><input type="date" name="to" value="<%= params[:to] %>" class="form-control"></div>
+  <div class="col-md-1 d-grid"><button class="btn btn-outline-secondary"><i class="bi bi-funnel"></i></button></div>
+</div></form>
+
+<div class="card"><div class="table-responsive">
+  <table class="table table-sm align-middle mb-0">
+    <thead class="table-light"><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Descripción</th><th>Cambios</th><th>IP</th></tr></thead>
+    <tbody>
+      <% @logs.each do |log| %>
+        <tr>
+          <td class="text-nowrap"><%= log.created_at.strftime("%d/%m/%Y %H:%M:%S") %></td>
+          <td><%= log.user&.name || "Sistema" %></td>
+          <td><%= badge(AuditLog::ACTIONS[log.action] || log.action) %></td>
+          <td><%= log.description %></td>
+          <td class="small">
+            <% (log.new_values || {}).each do |field, new_value| %>
+              <div><code><%= field %></code>: <span class="text-danger"><%= (log.old_values || {})[field].to_s.presence || "—" %></span> → <span class="text-success"><%= new_value.to_s %></span></div>
+            <% end %>
+          </td>
+          <td class="text-muted small"><%= log.ip_address %></td>
+        </tr>
+      <% end %>
+      <% if @logs.empty? %><tr><td colspan="6" class="text-center text-muted py-4">Sin registros.</td></tr><% end %>
+    </tbody>
+  </table>
+</div><div class="card-footer bg-white"><%= render "shared/pagination" %></div></div>

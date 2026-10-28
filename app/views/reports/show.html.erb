@@ -1,0 +1,38 @@
+<% content_for :title, @report[:title] %>
+<% dates = { from: @report[:from].to_s, to: @report[:to].to_s } %>
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <div>
+    <h1 class="title-h1 h3 mb-0"><%= @report[:title] %></h1>
+    <% if @report[:uses_dates] %><div class="text-muted">Del <%= @report[:from].strftime("%d/%m/%Y") %> al <%= @report[:to].strftime("%d/%m/%Y") %></div><% end %>
+  </div>
+  <div class="d-flex flex-wrap gap-1">
+    <a class="btn btn-sm btn-outline-danger" href="<%= report_path(@report[:type], dates.merge(format_type: "pdf")) %>"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+    <a class="btn btn-sm btn-outline-success" href="<%= report_path(@report[:type], dates.merge(format_type: "excel")) %>"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+    <a class="btn btn-sm btn-outline-secondary" href="<%= report_path(@report[:type], dates.merge(format_type: "csv")) %>"><i class="bi bi-filetype-csv"></i> CSV</a>
+    <a class="btn btn-sm btn-outline-secondary" href="<%= reports_path %>">Volver</a>
+  </div>
+</div>
+
+<% if @report[:summary].present? %>
+  <div class="row g-3 mb-3">
+    <% @report[:summary].each do |label, value| %>
+      <div class="col-sm-6 col-lg-3"><div class="card card-body"><div class="text-muted small"><%= label %></div><div class="fs-5 fw-semibold num"><%= value %></div></div></div>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="card"><div class="table-responsive">
+  <table class="table table-sm table-hover align-middle mb-0">
+    <thead class="table-light"><tr><% @report[:headings].each do |h| %><th><%= h %></th><% end %></tr></thead>
+    <tbody>
+      <% @report[:rows].each do |row| %>
+        <tr>
+          <% row.each do |cell| %>
+            <td class="<%= 'text-end num' if cell.is_a?(Numeric) %>"><%= cell.is_a?(Float) ? number_with_precision(cell, precision: 2, delimiter: ",", separator: ".") : cell %></td>
+          <% end %>
+        </tr>
+      <% end %>
+      <% if @report[:rows].empty? %><tr><td colspan="<%= @report[:headings].size %>" class="text-center text-muted py-4">Sin datos para el período seleccionado.</td></tr><% end %>
+    </tbody>
+  </table>
+</div></div>

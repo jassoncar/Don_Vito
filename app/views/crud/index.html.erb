@@ -1,0 +1,57 @@
+<% content_for :title, @title %>
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h1 class="title-h1 h3 mb-0"><%= @title %></h1>
+  <div class="d-flex flex-wrap gap-2">
+    <% (@extra_actions || []).each do |extra| %>
+      <% if can?(extra[:permission]) %>
+        <a href="<%= extra[:path] %>" class="btn btn-outline-primary"><i class="bi <%= extra[:icon] %>"></i> <%= extra[:label] %></a>
+      <% end %>
+    <% end %>
+    <% if can?("#{@permission}.create") %>
+      <a href="<%= url_for(action: :new) %>" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nuevo <%= @singular.downcase %></a>
+    <% end %>
+  </div>
+</div>
+
+<form method="get" class="card card-body mb-3">
+  <div class="input-group">
+    <input type="text" name="q" value="<%= params[:q] %>" class="form-control" placeholder="Buscar...">
+    <button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
+    <% if params[:q].present? %><a href="<%= url_for(action: :index) %>" class="btn btn-outline-secondary">Limpiar</a><% end %>
+  </div>
+</form>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <% @columns.each do |col| %><th><%= col[:label] %></th><% end %>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @records.each do |record| %>
+          <tr>
+            <% @columns.each do |col| %><td><%= crud_cell(record, col) %></td><% end %>
+            <td class="text-end text-nowrap">
+              <% if can?("#{@permission}.edit") %>
+                <a href="<%= url_for(action: :edit, id: record.id) %>" class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil"></i></a>
+              <% end %>
+              <% if can?("#{@permission}.delete") %>
+                <%= button_to url_for(action: :destroy, id: record.id), method: :delete, class: "btn btn-sm btn-outline-danger",
+                              form: { class: "d-inline", onsubmit: "return confirm('¿Eliminar este registro? Esta acción no se puede deshacer.')" } do %>
+                  <i class="bi bi-trash"></i>
+                <% end %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+        <% if @records.empty? %>
+          <tr><td colspan="<%= @columns.size + 1 %>" class="text-center text-muted py-4">No hay registros.</td></tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer bg-white"><%= render "shared/pagination" %></div>
+</div>

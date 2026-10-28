@@ -1,0 +1,26 @@
+<% content_for :title, "Kardex · #{@product.name}" %>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="title-h1 h3 mb-0">Kardex: <%= @product.name %></h1>
+    <div class="text-muted"><%= @product.sku %> · <%= @product.category&.name %> · Stock actual: <strong><%= @product.stock %></strong></div>
+  </div>
+  <a href="<%= inventory_path %>" class="btn btn-outline-secondary">Volver</a>
+</div>
+<div class="card"><div class="table-responsive">
+  <table class="table table-sm align-middle mb-0">
+    <thead class="table-light"><tr><th>Fecha</th><th>Tipo</th><th class="text-end">Movimiento</th><th class="text-end">Stock resultante</th><th>Usuario</th><th>Notas</th></tr></thead>
+    <tbody>
+      <% @movements.each do |m| %>
+        <tr>
+          <td><%= m.created_at.strftime("%d/%m/%Y %H:%M") %></td>
+          <td><%= m.kind_label %></td>
+          <td class="text-end fw-semibold <%= m.quantity >= 0 ? 'text-success' : 'text-danger' %>"><%= m.quantity > 0 ? "+" : "" %><%= m.quantity %></td>
+          <td class="text-end"><%= m.stock_after %></td>
+          <td><%= m.user&.name || "Sistema" %></td>
+          <td><%= m.notes %></td>
+        </tr>
+      <% end %>
+      <% if @movements.empty? %><tr><td colspan="6" class="text-center text-muted py-4">Sin movimientos.</td></tr><% end %>
+    </tbody>
+  </table>
+</div><div class="card-footer bg-white"><%= render "shared/pagination" %></div></div>

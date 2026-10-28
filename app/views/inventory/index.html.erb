@@ -1,0 +1,40 @@
+<% content_for :title, "Existencias" %>
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h1 class="title-h1 h3 mb-0">Existencias</h1>
+  <% if can?("inventory.adjust") %><a href="<%= new_adjustment_path %>" class="btn btn-primary"><i class="bi bi-sliders"></i> Nuevo ajuste</a><% end %>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-4"><div class="card card-body"><div class="text-muted small">Unidades en existencia</div><div class="fs-4 fw-semibold num"><%= number_with_delimiter(@totals[:units]) %></div></div></div>
+  <div class="col-md-4"><div class="card card-body"><div class="text-muted small">Valor a costo</div><div class="fs-4 fw-semibold num"><%= money(@totals[:cost_value]) %></div></div></div>
+  <div class="col-md-4"><div class="card card-body"><div class="text-muted small">Valor a precio de venta</div><div class="fs-4 fw-semibold num"><%= money(@totals[:sale_value]) %></div></div></div>
+</div>
+
+<form method="get" class="card card-body mb-3"><div class="row g-2 align-items-center">
+  <div class="col-md-5"><input type="text" name="q" value="<%= params[:q] %>" class="form-control" placeholder="Buscar por nombre, SKU o código de barras"></div>
+  <div class="col-md-3"><%= select_tag :category_id, options_from_collection_for_select(@categories, :id, :name, params[:category_id]), include_blank: "Todas las categorías", class: "form-select" %></div>
+  <div class="col-md-3"><div class="form-check"><%= check_box_tag :low, "1", params[:low] == "1", class: "form-check-input" %><label class="form-check-label" for="low">Solo stock bajo</label></div></div>
+  <div class="col-md-1 d-grid"><button class="btn btn-outline-secondary"><i class="bi bi-funnel"></i></button></div>
+</div></form>
+
+<div class="card"><div class="table-responsive">
+  <table class="table table-hover align-middle mb-0">
+    <thead class="table-light"><tr><th style="width:60px"></th><th>SKU</th><th>Producto</th><th>Categoría</th><th class="text-end">Stock</th><th class="text-end">Mínimo</th><th class="text-end">Costo</th><th class="text-end">Valor a costo</th><th></th></tr></thead>
+    <tbody>
+      <% @products.each do |product| %>
+        <tr>
+          <td><%= crud_cell(product, { key: "image_url", type: :image }) %></td>
+          <td><%= product.sku %></td>
+          <td><%= product.name %> <% unless product.is_active %><%= badge("Inactivo") %><% end %></td>
+          <td><%= product.category&.name %></td>
+          <td class="text-end"><%= badge(product.stock, product.low_stock? ? "danger" : "success") %></td>
+          <td class="text-end"><%= product.min_stock %></td>
+          <td class="text-end num"><%= money(product.cost_price) %></td>
+          <td class="text-end num"><%= money(product.stock * product.cost_price) %></td>
+          <td class="text-end"><a href="<%= inventory_product_path(product) %>" class="btn btn-sm btn-outline-primary" title="Kardex"><i class="bi bi-clock-history"></i></a></td>
+        </tr>
+      <% end %>
+      <% if @products.empty? %><tr><td colspan="9" class="text-center text-muted py-4">No hay productos.</td></tr><% end %>
+    </tbody>
+  </table>
+</div><div class="card-footer bg-white"><%= render "shared/pagination" %></div></div>

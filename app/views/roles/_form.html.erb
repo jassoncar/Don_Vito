@@ -1,0 +1,59 @@
+<% is_admin = @role.persisted? && @role.admin? %>
+<% if @role.errors.any? %>
+  <div class="alert alert-danger"><ul class="mb-0"><% @role.errors.full_messages.each do |m| %><li><%= m %></li><% end %></ul></div>
+<% end %>
+
+<%= form_with model: @role, scope: :role, url: (@role.persisted? ? role_path(@role) : roles_path), method: (@role.persisted? ? :patch : :post) do |f| %>
+  <div class="card card-body mb-3">
+    <div class="row g-3">
+      <div class="col-md-5"><%= f.label :name, "Nombre del rol", class: "form-label" %><%= f.text_field :name, class: "form-control", disabled: is_admin, required: true %></div>
+      <div class="col-md-7"><%= f.label :description, "Descripción", class: "form-label" %><%= f.text_field :description, class: "form-control" %></div>
+    </div>
+  </div>
+
+  <% if is_admin %>
+    <div class="alert alert-info">El rol Administrador siempre tiene acceso total; sus permisos no son editables.</div>
+  <% else %>
+    <div class="card mb-3">
+      <div class="card-header bg-white fw-semibold">Permisos por módulo</div>
+      <div class="table-responsive"><table class="table align-middle mb-0"><tbody>
+        <% Permission::CATALOG.each do |mod, (mod_label, actions)| %>
+          <tr>
+            <td class="fw-semibold" style="width:260px">
+              <div class="form-check">
+                <input class="form-check-input js-toggle-module" type="checkbox" id="mod_<%= mod %>" data-module="<%= mod %>">
+                <label class="form-check-label" for="mod_<%= mod %>"><%= mod_label %></label>
+              </div>
+            </td>
+            <td>
+              <% actions.each do |action, label| %>
+                <% perm = "#{mod}.#{action}" %>
+                <div class="form-check form-check-inline">
+                  <%= check_box_tag "permissions[]", perm, @granted.include?(perm), id: "p_#{mod}_#{action}", class: "form-check-input js-perm", data: { module: mod } %>
+                  <label class="form-check-label" for="p_<%= mod %>_<%= action %>"><%= label %></label>
+                </div>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody></table></div>
+    </div>
+  <% end %>
+
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary"><i class="bi bi-check-lg"></i> Guardar</button>
+    <a href="<%= roles_path %>" class="btn btn-outline-secondary">Cancelar</a>
+  </div>
+<% end %>
+
+<% content_for :scripts do %>
+  <script>
+    document.querySelectorAll('.js-toggle-module').forEach(function (toggle) {
+      const perms = document.querySelectorAll('.js-perm[data-module="' + toggle.dataset.module + '"]');
+      const sync = () => { toggle.checked = Array.from(perms).every(p => p.checked); };
+      toggle.addEventListener('change', () => perms.forEach(p => p.checked = toggle.checked));
+      perms.forEach(p => p.addEventListener('change', sync));
+      sync();
+    });
+  </script>
+<% end %>

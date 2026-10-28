@@ -1,0 +1,9 @@
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+.env
+/db/schema.rb.bak
+/vendor/bundle
+/public/uploads/products/*
+!/public/uploads/products/.keep
