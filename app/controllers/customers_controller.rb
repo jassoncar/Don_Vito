@@ -1,34 +1,23 @@
-class CustomersController < CrudController
+class CustomersController < ApplicationController
+  before_action :set_customer, only: %i[show edit update destroy]
+  def index = @customers = Customer.order(:name)
+  def show; end
+  def new = @customer = Customer.new
+  def create
+    @customer = Customer.new(customer_params)
+    if @customer.save; redirect_to customers_path, notice: "Cliente creado."
+    else; render :new, status: :unprocessable_entity; end
+  end
+  def edit; end
+  def update
+    if @customer.update(customer_params); redirect_to customers_path, notice: "Cliente actualizado."
+    else; render :edit, status: :unprocessable_entity; end
+  end
+  def destroy
+    @customer.destroy
+    redirect_to customers_path, notice: "Cliente eliminado."
+  end
   private
-
-  def model_class = Customer
-  def permission_prefix = "customers"
-  def title = "Clientes"
-  def singular = "Cliente"
-  def searchable = %w[name email phone tax_id]
-
-  def columns
-    [
-      { key: "name", label: "Cliente" },
-      { key: "tax_id", label: "Identificación" },
-      { key: "phone", label: "Teléfono" },
-      { key: "email", label: "Correo" },
-      { key: "is_active", label: "Estado", type: :bool }
-    ]
-  end
-
-  def fields(_record = nil)
-    {
-      name: { label: "Nombre", type: :text, col: 6 },
-      tax_id: { label: "Cédula / RUC", type: :text, col: 6 },
-      phone: { label: "Teléfono", type: :text, col: 6 },
-      email: { label: "Correo electrónico", type: :email, col: 6 },
-      address: { label: "Dirección", type: :text, col: 12 },
-      is_active: { label: "Activo", type: :checkbox, default: true, col: 12 }
-    }
-  end
-
-  def delete_error(record)
-    "No se puede eliminar: el cliente tiene ventas registradas. Desactívelo en su lugar." if record.sales.exists?
-  end
+  def set_customer = @customer = Customer.find(params[:id])
+  def customer_params = params.require(:customer).permit(:name, :phone, :email, :address)
 end

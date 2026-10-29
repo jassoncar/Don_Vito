@@ -1,28 +1,23 @@
-class CategoriesController < CrudController
+class CategoriesController < ApplicationController
+  before_action :set_category, only: %i[edit update destroy]
+  def index = @categories = Category.order(:name)
+  def new = @category = Category.new
+  def create
+    @category = Category.new(category_params)
+    if @category.save; redirect_to categories_path, notice: "Categoría creada."
+    else; render :new, status: :unprocessable_entity; end
+  end
+  def edit; end
+  def update
+    if @category.update(category_params); redirect_to categories_path, notice: "Categoría actualizada."
+    else; render :edit, status: :unprocessable_entity; end
+  end
+  def destroy
+    if @category.products.exists?; @category.update!(active: false)
+    else; @category.destroy; end
+    redirect_to categories_path, notice: "Categoría procesada."
+  end
   private
-
-  def model_class = Category
-  def permission_prefix = "categories"
-  def title = "Categorías"
-  def singular = "Categoría"
-
-  def columns
-    [
-      { key: "name", label: "Nombre" },
-      { key: "description", label: "Descripción" },
-      { key: "is_active", label: "Estado", type: :bool }
-    ]
-  end
-
-  def fields(_record = nil)
-    {
-      name: { label: "Nombre", type: :text, col: 6 },
-      description: { label: "Descripción", type: :text, col: 6 },
-      is_active: { label: "Activa", type: :checkbox, default: true, col: 12 }
-    }
-  end
-
-  def delete_error(record)
-    "No se puede eliminar: la categoría tiene productos asociados." if record.products.exists?
-  end
+  def set_category = @category = Category.find(params[:id])
+  def category_params = params.require(:category).permit(:name, :description, :active)
 end

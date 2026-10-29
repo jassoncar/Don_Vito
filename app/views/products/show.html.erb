@@ -1,0 +1,9 @@
+<h1 class="h3"><%= @product.name %></h1><p class="text-muted"><%= @product.sku %></p>
+<div class="card"><div class="card-body"><dl class="row">
+<dt class="col-sm-3">Categoría</dt><dd class="col-sm-9"><%= @product.category.name %></dd>
+<dt class="col-sm-3">Marca</dt><dd class="col-sm-9"><%= @product.brand&.name || "—" %></dd>
+<dt class="col-sm-3">Existencias</dt><dd class="col-sm-9"><%= @product.stock %></dd>
+<dt class="col-sm-3">Costo</dt><dd class="col-sm-9"><%= number_to_currency(@product.cost_price, unit: "C$ ") %></dd>
+<dt class="col-sm-3">Precio</dt><dd class="col-sm-9"><%= number_to_currency(@product.sale_price, unit: "C$ ") %></dd>
+<dt class="col-sm-3">Descripción</dt><dd class="col-sm-9"><%= @product.description.presence || "—" %></dd>
+</dl><%= link_to "Editar", edit_product_path(@product), class: "btn btn-primary" %> <%= link_to "Volver", products_path, class: "btn btn-outline-secondary" %></div></div>
