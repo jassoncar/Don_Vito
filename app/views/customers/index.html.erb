@@ -1,0 +1,2 @@
+<div class="d-flex justify-content-between mb-3"><h1 class="h3">Clientes</h1><%= link_to "Nuevo cliente", new_customer_path, class: "btn btn-primary" %></div>
+<table class="table bg-white"><thead><tr><th>Nombre</th><th>Teléfono</th><th>Correo</th><th></th></tr></thead><tbody><% @customers.each do |c| %><tr><td><%= link_to c.name, customer_path(c) %></td><td><%= c.phone %></td><td><%= c.email %></td><td><%= link_to "Editar", edit_customer_path(c), class: "btn btn-sm btn-outline-secondary" %></td></tr><% end %></tbody></table>

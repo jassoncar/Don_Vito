@@ -3,19 +3,18 @@ default: &default
   encoding: utf8mb4
   collation: utf8mb4_unicode_ci
   pool: <%= ENV.fetch("RAILS_MAX_THREADS", 5) %>
-  host: <%= ENV.fetch("DB_HOST", "127.0.0.1") %>
-  port: <%= ENV.fetch("DB_PORT", 3306) %>
-  username: <%= ENV.fetch("DB_USERNAME", "root") %>
-  password: <%= ENV.fetch("DB_PASSWORD", "") %>
-
+  host: <%= ENV.fetch("MYSQL_HOST", ENV.fetch("DB_HOST", "127.0.0.1")) %>
+  port: <%= ENV.fetch("MYSQL_PORT", 3306) %>
+  username: <%= ENV.fetch("MYSQL_USER", "rails") %>
+  password: <%= ENV.fetch("MYSQL_PASSWORD", "change_me") %>
 development:
   <<: *default
-  database: <%= ENV.fetch("DB_DATABASE", "licoreria") %>
-
+  database: <%= ENV.fetch("MYSQL_DATABASE", "sistema_comercial_development") %>
 test:
   <<: *default
-  database: <%= ENV.fetch("DB_DATABASE", "licoreria") %>_test
-
+  database: sistema_comercial_test
 production:
   <<: *default
-  database: <%= ENV.fetch("DB_DATABASE", "licoreria") %>
+  database: <%= ENV.fetch("MYSQL_DATABASE", "sistema_comercial_production") %>
+  username: <%= ENV.fetch("MYSQL_USER", "rails") %>
+  password: <%= ENV.fetch("MYSQL_PASSWORD") %>
