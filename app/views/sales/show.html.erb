@@ -1,3 +1,79 @@
-<div class="d-flex justify-content-between"><h1 class="h3">Comprobante <%= @sale.reference %></h1><button class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button></div><p>Fecha: <%= l(@sale.created_at, format: :long) %> · Cajero: <%= @sale.user.email %> · Cliente: <%= @sale.customer&.name || "Venta general" %></p>
-<table class="table"><thead><tr><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th></tr></thead><tbody><% @sale.sale_items.each do |i| %><tr><td><%= i.product.name %></td><td><%= i.quantity %></td><td><%= number_to_currency(i.unit_price, unit: "C$ ") %></td><td><%= number_to_currency(i.subtotal, unit: "C$ ") %></td></tr><% end %></tbody></table>
-<div class="text-end"><p>Subtotal: <%= number_to_currency(@sale.subtotal, unit: "C$ ") %></p><p>Descuento: <%= number_to_currency(@sale.discount, unit: "C$ ") %></p><p>Impuesto: <%= number_to_currency(@sale.tax, unit: "C$ ") %></p><h3>Total: <%= number_to_currency(@sale.total, unit: "C$ ") %></h3><p>Pago: <%= @sale.payment_method.humanize %></p></div>
+<% content_for :title, "Venta #{@sale.code}" %>
+<% can_return = @sale.status != "cancelled" && @sale.sale_items.to_a.sum(&:returnable) > 0 %>
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h1 class="title-h1 h3 mb-0">Venta <%= @sale.code %> <span class="badge bg-<%= status_color(@sale.status) %> fs-6 align-middle"><%= @sale.status_label %></span></h1>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="<%= receipt_sale_path(@sale) %>" target="_blank" class="btn btn-outline-primary"><i class="bi bi-file-earmark-pdf"></i> Comprobante PDF</a>
+    <button class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+    <% if can_return && can?("returns.create") %>
+      <a href="<%= new_sale_return_path(@sale) %>" class="btn btn-outline-warning"><i class="bi bi-arrow-return-left"></i> Devolución</a>
+    <% end %>
+    <% if @sale.status == "completed" && @sale.sale_items.to_a.sum(&:returned_qty).zero? && can?("sales.cancel") %>
+      <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal"><i class="bi bi-x-circle"></i> Anular</button>
+    <% end %>
+    <a href="<%= sales_path %>" class="btn btn-outline-secondary">Volver</a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-4"><div class="card card-body"><dl class="mb-0">
+    <dt>Fecha</dt><dd><%= @sale.created_at.strftime("%d/%m/%Y %H:%M") %></dd>
+    <dt>Cliente</dt><dd><%= @sale.customer&.name || "Consumidor final" %></dd>
+    <dt>Vendedor</dt><dd><%= @sale.user&.name %></dd>
+    <dt>Método de pago</dt><dd><%= @sale.payment_label %></dd>
+    <% if @sale.payment_detail.present? %><dt>Detalle del pago</dt><dd><%= @sale.payment_detail %></dd><% end %>
+    <dt>Monto recibido / cambio</dt><dd><%= money(@sale.amount_paid) %> / <%= money(@sale.change_amount) %></dd>
+    <% if @sale.cancel_reason.present? %><dt>Motivo de anulación</dt><dd><%= @sale.cancel_reason %></dd><% end %>
+    <dt>Notas</dt><dd class="mb-0"><%= @sale.notes.presence || "—" %></dd>
+  </dl></div></div>
+
+  <div class="col-lg-8">
+    <div class="card mb-3"><div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead class="table-light"><tr><th>Producto</th><th class="text-end">Cant.</th><th class="text-end">Devueltas</th><th class="text-end">Precio</th><th class="text-end">Total</th></tr></thead>
+        <tbody>
+          <% @sale.sale_items.each do |item| %>
+            <tr><td><%= item.product&.name %></td><td class="text-end"><%= item.quantity %></td><td class="text-end"><%= item.returned_qty %></td><td class="text-end num"><%= money(item.unit_price) %></td><td class="text-end num"><%= money(item.total) %></td></tr>
+          <% end %>
+        </tbody>
+        <tfoot>
+          <tr><td colspan="4" class="text-end">Subtotal</td><td class="text-end num"><%= money(@sale.subtotal) %></td></tr>
+          <tr><td colspan="4" class="text-end">Impuesto</td><td class="text-end num"><%= money(@sale.tax) %></td></tr>
+          <tr><td colspan="4" class="text-end">Descuento</td><td class="text-end num">- <%= money(@sale.discount) %></td></tr>
+          <tr class="fw-bold fs-5"><td colspan="4" class="text-end">Total</td><td class="text-end num"><%= money(@sale.total) %></td></tr>
+        </tfoot>
+      </table>
+    </div></div>
+
+    <% if @sale.sale_returns.any? %>
+      <div class="card">
+        <div class="card-header bg-white fw-semibold">Devoluciones de esta venta</div>
+        <ul class="list-group list-group-flush">
+          <% @sale.sale_returns.each do |ret| %>
+            <li class="list-group-item d-flex justify-content-between">
+              <span>
+                <% if can?("returns.view") %><a href="<%= return_path(ret) %>"><%= ret.code %></a><% else %><%= ret.code %><% end %>
+                · <%= ret.created_at.strftime("%d/%m/%Y %H:%M") %> · <%= ret.reason %>
+              </span>
+              <span class="num"><%= money(ret.total) %></span>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<% if can?("sales.cancel") %>
+  <div class="modal fade" id="cancelModal" tabindex="-1"><div class="modal-dialog">
+    <%= form_with url: cancel_sale_path(@sale), method: :post, class: "modal-content" do %>
+      <div class="modal-header"><h5 class="modal-title">Anular venta <%= @sale.code %></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <p class="text-muted">Se restituirá el stock de todos los productos de esta venta.</p>
+        <label class="form-label" for="cancel_reason">Motivo</label>
+        <%= text_field_tag :cancel_reason, nil, class: "form-control", maxlength: 255, required: true %>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button><button class="btn btn-danger">Anular venta</button></div>
+    <% end %>
+  </div></div>
+<% end %>

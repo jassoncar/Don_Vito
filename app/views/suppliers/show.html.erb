@@ -1,1 +1,0 @@
-<h1 class="h3"><%= @supplier.name %></h1><p><%= @supplier.phone %> · <%= @supplier.email %></p><h2 class="h5">Compras</h2><ul><% @supplier.purchases.order(created_at: :desc).each do |p| %><li><%= link_to p.reference, purchase_path(p) %> — <%= p.status %> — <%= number_to_currency(p.total, unit: "C$ ") %></li><% end %></ul>

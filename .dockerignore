@@ -1,7 +1,4 @@
-.git
-.env
-log
-tmp
-storage
 vendor/bundle
-node_modules
+log/*
+tmp/*
+.git

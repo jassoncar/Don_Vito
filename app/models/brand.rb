@@ -1,4 +1,7 @@
 class Brand < ApplicationRecord
-  has_many :products, dependent: :restrict_with_exception
-  validates :name, presence: true, uniqueness: { case_sensitive: false }
+  include Auditable
+
+  has_many :products
+
+  validates :name, presence: true, length: { maximum: 255 }, uniqueness: { case_sensitive: false }
 end

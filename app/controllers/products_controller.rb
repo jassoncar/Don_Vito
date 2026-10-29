@@ -1,34 +1,57 @@
-class ProductsController < ApplicationController
-  before_action :set_product, only: %i[show edit update destroy]
-  def index
-    @products = Product.includes(:category, :brand).order(:name)
-    @products = @products.where("name LIKE ? OR sku LIKE ? OR barcode LIKE ?", "%#{params[:q]}%", "%#{params[:q]}%", "%#{params[:q]}%") if params[:q].present?
-    @products = @products.low_stock if params[:low_stock].present?
-  end
-  def show; end
-  def new; @product = Product.new(active: true, stock: 0, minimum_stock: 5); end
-  def create
-    @product = Product.new(product_params)
-    if @product.save
-      audit!("create", @product); redirect_to @product, notice: "Producto creado correctamente."
-    else
-      render :new, status: :unprocessable_entity
-    end
-  end
-  def edit; end
-  def update
-    if @product.update(product_params)
-      audit!("update", @product); redirect_to @product, notice: "Producto actualizado."
-    else
-      render :edit, status: :unprocessable_entity
-    end
-  end
-  def destroy
-    @product.update(active: false)
-    audit!("deactivate", @product)
-    redirect_to products_path, notice: "Producto desactivado."
-  end
+class ProductsController < CrudController
   private
-  def set_product = @product = Product.find(params[:id])
-  def product_params = params.require(:product).permit(:sku, :barcode, :name, :description, :category_id, :brand_id, :cost_price, :sale_price, :stock, :minimum_stock, :active)
+
+  def model_class = Product
+  def permission_prefix = "products"
+  def title = "Productos"
+  def singular = "Producto"
+  def includes_list = %i[category brand]
+  def searchable = %w[name sku barcode]
+
+  def extra_actions
+    [{ label: "Importar desde archivo", path: new_product_import_path, icon: "bi-upload", permission: "products.create" }]
+  end
+
+  def columns
+    [
+      { key: "image_url", label: "", type: :image },
+      { key: "sku", label: "SKU" },
+      { key: "name", label: "Producto" },
+      { key: "category.name", label: "Categoría" },
+      { key: "brand.name", label: "Marca" },
+      { key: "sale_price", label: "Precio", type: :money },
+      { key: "stock", label: "Stock", type: :stock },
+      { key: "is_active", label: "Estado", type: :bool }
+    ]
+  end
+
+  def fields(record = nil)
+    fields = {
+      sku: { label: "SKU", type: :text, col: 4 },
+      barcode: { label: "Código de barras", type: :text, col: 4 },
+      name: { label: "Nombre", type: :text, col: 4 },
+      category_id: { label: "Categoría", type: :select, col: 4, placeholder: "Seleccione...",
+                     options: Category.where(is_active: true).order(:name).pluck(:name, :id) },
+      brand_id: { label: "Marca", type: :select, col: 4, placeholder: "Sin marca",
+                  options: Brand.where(is_active: true).order(:name).pluck(:name, :id) },
+      supplier_id: { label: "Proveedor", type: :select, col: 4, placeholder: "Sin proveedor",
+                     options: Supplier.where(is_active: true).order(:name).pluck(:name, :id) },
+      cost_price: { label: "Precio de costo", type: :number, step: "0.01", col: 3, default: 0 },
+      sale_price: { label: "Precio de venta", type: :number, step: "0.01", col: 3, default: 0 },
+      tax_rate: { label: "Impuesto (%)", type: :number, step: "0.01", col: 3, default: 15 },
+      min_stock: { label: "Stock mínimo", type: :number, step: "1", col: 3, default: 5 }
+    }
+    fields[:initial_stock] = { label: "Stock inicial", type: :number, step: "1", col: 3, default: 0 } if record.nil?
+    fields[:description] = { label: "Descripción", type: :textarea, col: 12 }
+    fields[:image_file] = { label: "Imagen del producto (JPG, PNG o WEBP, máx. 2 MB)", type: :file, col: 12 }
+    fields[:remove_image] = { label: "Quitar la imagen actual", type: :checkbox, col: 12 } if record&.image.present?
+    fields[:is_active] = { label: "Activo (disponible para la venta)", type: :checkbox, default: true, col: 12 }
+    fields
+  end
+
+  def delete_error(record)
+    return unless record.sale_items.exists? || record.purchase_items.exists?
+
+    "No se puede eliminar: el producto tiene ventas o compras registradas. Desactívelo en su lugar."
+  end
 end

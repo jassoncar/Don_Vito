@@ -1,35 +1,54 @@
 services:
-  db:
-    image: mysql:8.4
-    restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-sistema_comercial_development}
-      MYSQL_USER: ${MYSQL_USER:-rails}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change_me}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change_root_me}
-    volumes:
-      - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
-      interval: 5s
-      timeout: 5s
-      retries: 30
-  web:
+  app:
     build: .
-    restart: unless-stopped
-    env_file: .env
+    container_name: licoreria_app
+    ports:
+      - "${APP_PORT:-8080}:3000"
+    volumes:
+      - .:/app
+      - bundle:/usr/local/bundle
     environment:
       RAILS_ENV: development
       DB_HOST: db
-    ports:
-      - "3000:3000"
-    volumes:
-      - .:/app
-      - bundle_cache:/usr/local/bundle
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-licoreria}
+      DB_USERNAME: ${DB_USERNAME:-licoreria}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
     depends_on:
       db:
         condition: service_healthy
-    command: ["bash", "-lc", "bundle install && bin/rails db:prepare && bin/rails server -b 0.0.0.0"]
+
+  db:
+    image: mysql:8.0
+    container_name: licoreria_db
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - "${FORWARD_DB_PORT:-3307}:3306"
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-licoreria}
+      MYSQL_USER: ${DB_USERNAME:-licoreria}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  phpmyadmin:
+    image: phpmyadmin:5
+    container_name: licoreria_pma
+    ports:
+      - "${PMA_PORT:-8081}:80"
+    environment:
+      PMA_HOST: db
+    depends_on:
+      - db
+
 volumes:
-  mysql_data:
-  bundle_cache:
+  dbdata:
+  bundle:

@@ -1,4 +1,9 @@
 class Supplier < ApplicationRecord
-  has_many :purchases, dependent: :restrict_with_exception
-  validates :name, presence: true
+  include Auditable
+
+  has_many :products
+  has_many :purchases
+
+  validates :name, presence: true, length: { maximum: 255 }
+  validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
 end
