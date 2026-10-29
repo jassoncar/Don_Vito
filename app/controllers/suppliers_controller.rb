@@ -1,23 +1,35 @@
-class SuppliersController < ApplicationController
-  before_action :set_supplier, only: %i[show edit update destroy]
-  def index = @suppliers = Supplier.order(:name)
-  def show; end
-  def new = @supplier = Supplier.new(active: true)
-  def create
-    @supplier = Supplier.new(supplier_params)
-    if @supplier.save; redirect_to suppliers_path, notice: "Proveedor creado."
-    else; render :new, status: :unprocessable_entity; end
-  end
-  def edit; end
-  def update
-    if @supplier.update(supplier_params); redirect_to suppliers_path, notice: "Proveedor actualizado."
-    else; render :edit, status: :unprocessable_entity; end
-  end
-  def destroy
-    @supplier.update!(active: false)
-    redirect_to suppliers_path, notice: "Proveedor desactivado."
-  end
+class SuppliersController < CrudController
   private
-  def set_supplier = @supplier = Supplier.find(params[:id])
-  def supplier_params = params.require(:supplier).permit(:name, :contact_name, :phone, :email, :address, :active)
+
+  def model_class = Supplier
+  def permission_prefix = "suppliers"
+  def title = "Proveedores"
+  def singular = "Proveedor"
+  def searchable = %w[name contact_name email phone tax_id]
+
+  def columns
+    [
+      { key: "name", label: "Proveedor" },
+      { key: "contact_name", label: "Contacto" },
+      { key: "phone", label: "Teléfono" },
+      { key: "email", label: "Correo" },
+      { key: "is_active", label: "Estado", type: :bool }
+    ]
+  end
+
+  def fields(_record = nil)
+    {
+      name: { label: "Nombre / Razón social", type: :text, col: 6 },
+      tax_id: { label: "RUC / Identificación", type: :text, col: 6 },
+      contact_name: { label: "Persona de contacto", type: :text, col: 6 },
+      phone: { label: "Teléfono", type: :text, col: 6 },
+      email: { label: "Correo electrónico", type: :email, col: 6 },
+      address: { label: "Dirección", type: :text, col: 6 },
+      is_active: { label: "Activo", type: :checkbox, default: true, col: 12 }
+    }
+  end
+
+  def delete_error(record)
+    "No se puede eliminar: el proveedor tiene compras registradas. Desactívelo en su lugar." if record.purchases.exists?
+  end
 end

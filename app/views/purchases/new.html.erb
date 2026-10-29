@@ -1,7 +1,78 @@
-<h1 class="h3 mb-3">Registrar compra</h1>
-<%= form_with url: purchases_path, scope: :purchase do |f| %>
-<div class="mb-3"><%= f.label :supplier_id, "Proveedor", class: "form-label" %><%= f.collection_select :supplier_id, @suppliers, :id, :name, {prompt: "Selecciona proveedor"}, class: "form-select", required: true %></div>
-<p class="text-muted">Agrega hasta cinco líneas de compra; las líneas vacías se ignoran.</p>
-<% 5.times do |i| %><div class="row g-2 mb-2"><div class="col-md-6"><label class="form-label">Producto <%= i+1 %></label><select name="items[][product_id]" class="form-select"><option value="">Seleccionar producto</option><% @products.each do |p| %><option value="<%= p.id %>"><%= p.sku %> — <%= p.name %></option><% end %></select></div><div class="col-md-3"><label class="form-label">Cantidad</label><input name="items[][quantity]" type="number" min="1" class="form-control"></div><div class="col-md-3"><label class="form-label">Costo unitario</label><input name="items[][unit_cost]" type="number" min="0" step="0.01" class="form-control"></div></div><% end %>
-<%= f.submit "Guardar compra", class: "btn btn-primary mt-3" %>
+<% content_for :title, "Nueva orden de compra" %>
+<h1 class="title-h1 h3 mb-3">Nueva orden de compra</h1>
+
+<%= form_with url: purchases_path, method: :post, id: "purchase-form" do %>
+  <div class="card card-body mb-3"><div class="row g-3">
+    <div class="col-md-5">
+      <label class="form-label" for="supplier_id">Proveedor</label>
+      <%= select_tag :supplier_id, options_from_collection_for_select(@suppliers, :id, :name, params[:supplier_id]), include_blank: "Seleccione...", class: "form-select", required: true %>
+    </div>
+    <div class="col-md-3"><label class="form-label" for="ordered_at">Fecha</label><%= date_field_tag :ordered_at, params[:ordered_at].presence || Time.zone.today, class: "form-control", required: true %></div>
+    <div class="col-md-4"><label class="form-label" for="notes">Notas</label><%= text_field_tag :notes, params[:notes], class: "form-control" %></div>
+  </div></div>
+
+  <div class="card mb-3">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <span class="fw-semibold">Productos</span>
+      <button type="button" class="btn btn-sm btn-outline-primary" id="add-row"><i class="bi bi-plus-lg"></i> Agregar producto</button>
+    </div>
+    <div class="table-responsive"><table class="table align-middle mb-0">
+      <thead class="table-light"><tr><th style="min-width:280px">Producto</th><th style="width:130px">Cantidad</th><th style="width:160px">Costo unitario</th><th class="text-end" style="width:140px">Subtotal</th><th style="width:50px"></th></tr></thead>
+      <tbody id="rows"></tbody>
+      <tfoot><tr><th colspan="3" class="text-end">Total</th><th class="text-end num" id="grand-total">0.00</th><th></th></tr></tfoot>
+    </table></div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary"><i class="bi bi-check-lg"></i> Crear orden</button>
+    <a href="<%= purchases_path %>" class="btn btn-outline-secondary">Cancelar</a>
+  </div>
+<% end %>
+
+<% content_for :scripts do %>
+<script>
+  const products = <%= raw @products.to_json %>;
+  const oldItems = <%= raw @old_items.to_json %>;
+  const rows = document.getElementById('rows');
+  let counter = 0;
+
+  function addRow(item) {
+    const i = counter++;
+    const tr = document.createElement('tr');
+    const options = ['<option value="">Seleccione...</option>'].concat(
+      products.map(p => '<option value="' + p.id + '" data-cost="' + p.cost + '">' + p.label.replace(/</g, '&lt;') + '</option>')
+    ).join('');
+    tr.innerHTML =
+      '<td><select name="items[' + i + '][product_id]" class="form-select js-product" required>' + options + '</select></td>' +
+      '<td><input type="number" min="1" step="1" name="items[' + i + '][quantity]" class="form-control js-qty" value="1" required></td>' +
+      '<td><input type="number" min="0" step="0.01" name="items[' + i + '][unit_cost]" class="form-control js-cost" value="0" required></td>' +
+      '<td class="text-end num js-line">0.00</td>' +
+      '<td><button type="button" class="btn btn-sm btn-outline-danger js-remove"><i class="bi bi-x-lg"></i></button></td>';
+    rows.appendChild(tr);
+    const select = tr.querySelector('.js-product'), qty = tr.querySelector('.js-qty'), cost = tr.querySelector('.js-cost');
+    if (item) { select.value = item.product_id || ''; qty.value = item.quantity || 1; cost.value = item.unit_cost || 0; }
+    select.addEventListener('change', () => {
+      const opt = select.options[select.selectedIndex];
+      if (opt && opt.dataset.cost !== undefined) cost.value = opt.dataset.cost;
+      recalc();
+    });
+    qty.addEventListener('input', recalc);
+    cost.addEventListener('input', recalc);
+    tr.querySelector('.js-remove').addEventListener('click', () => { tr.remove(); recalc(); });
+    recalc();
+  }
+
+  function recalc() {
+    let total = 0;
+    rows.querySelectorAll('tr').forEach(tr => {
+      const line = (parseFloat(tr.querySelector('.js-qty').value) || 0) * (parseFloat(tr.querySelector('.js-cost').value) || 0);
+      tr.querySelector('.js-line').textContent = line.toFixed(2);
+      total += line;
+    });
+    document.getElementById('grand-total').textContent = total.toFixed(2);
+  }
+
+  document.getElementById('add-row').addEventListener('click', () => addRow());
+  if (oldItems.length) { oldItems.forEach(addRow); } else { addRow(); }
+</script>
 <% end %>

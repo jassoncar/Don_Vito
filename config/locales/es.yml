@@ -1,11 +1,41 @@
 es:
-  date:
-    formats:
-      default: "%d/%m/%Y"
-  time:
-    formats:
-      default: "%d/%m/%Y %H:%M"
-      short: "%d/%m %H:%M"
-      long: "%d de %B de %Y, %H:%M"
-  errors:
-    format: "%{attribute} %{message}"
+  activerecord:
+    models:
+      product: Producto
+      user: Usuario
+      role: Rol
+      category: Categoría
+      brand: Marca
+      supplier: Proveedor
+      customer: Cliente
+    attributes:
+      product:
+        sku: SKU
+        barcode: Código de barras
+        name: Nombre
+        description: Descripción
+        category: Categoría
+        category_id: Categoría
+        cost_price: Precio de costo
+        sale_price: Precio de venta
+        tax_rate: Impuesto
+        min_stock: Stock mínimo
+        initial_stock: Stock inicial
+      user:
+        name: Nombre
+        email: Correo electrónico
+        password: Contraseña
+        role: Rol
+      role:
+        name: Nombre
+        slug: Identificador
+      category:
+        name: Nombre
+      brand:
+        name: Nombre
+      supplier:
+        name: Nombre
+        email: Correo electrónico
+      customer:
+        name: Nombre
+        email: Correo electrónico

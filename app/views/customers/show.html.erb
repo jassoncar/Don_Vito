@@ -1,1 +1,0 @@
-<h1 class="h3"><%= @customer.name %></h1><p><%= @customer.phone %> · <%= @customer.email %></p><h2 class="h5">Operaciones</h2><ul><% @customer.sales.order(created_at: :desc).each do |s| %><li><%= link_to s.reference, sale_path(s) %> — <%= number_to_currency(s.total, unit: "C$ ") %></li><% end %></ul>
