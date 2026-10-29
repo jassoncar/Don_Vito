@@ -36,6 +36,8 @@ En una terminal separada, carga datos de demostración:
 
 ```bash
 docker compose exec web bin/rails db:seed
+docker compose up -d --build
+docker compose logs -f app   # primera vez: instala gemas, crea tablas y carga datos demo
 ```
 
 Usuarios de demostración (todos usan inicialmente `Cambiar123!`):
