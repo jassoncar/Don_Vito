@@ -4,7 +4,7 @@
 <% cards = [
   ["Ventas de hoy", money(@stats[:sales_today]), "#{@stats[:sales_today_count]} venta(s)", "bi-cash-coin", "success"],
   ["Ventas del mes", money(@stats[:sales_month]), "Acumulado del mes", "bi-graph-up-arrow", "gold"],
-  ["Productos activos", @stats[:products], "En catálogo", "bi-box-seam", "green"],
+  ["Productos activos", @stats[:products], "En catálogo", "bi-box-seam", "success"],
   ["Stock bajo", @stats[:low_stock], "#{@stats[:pending_purchases]} orden(es) de compra pendiente(s)", "bi-exclamation-triangle", "danger"]
 ] %>
 <div class="row g-3 mb-4">
@@ -74,10 +74,27 @@
 <% content_for :scripts do %>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script>
+    
     new Chart(document.getElementById('salesChart'), {
-      type: 'bar',
-      data: { labels: <%= raw @chart[:labels].to_json %>, datasets: [{ label: 'Ventas', data: <%= raw @chart[:data].to_json %>, backgroundColor: '#b45309', borderRadius: 4 }] },
-      options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+      type: 'line',
+      data: { labels: <%= raw @chart[:labels].to_json %>,
+              datasets: [
+                { 
+                  label: 'Ventas C$', 
+                  data: <%= raw @chart[:data].to_json%>, 
+                  backgroundColor: '#000000', 
+                  borderColor: '#ccb023',
+                  borderRadius: 2
+                }
+              ] 
+            },
+      options: { plugins: { 
+                            legend: { display: false } 
+                          }, 
+                 scales: { 
+                            y: { beginAtZero: true } 
+                          } 
+                }
     });
   </script>
 <% end %>

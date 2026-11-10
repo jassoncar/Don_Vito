@@ -3,6 +3,7 @@ class DashboardController < ApplicationController
     valid = Sale.where.not(status: "cancelled")
     today = Time.zone.today
 
+
     @stats = {
       sales_today: valid.where(created_at: today.all_day).sum(:total),
       sales_today_count: valid.where(created_at: today.all_day).count,
