@@ -4,6 +4,7 @@ class SalesController < ApplicationController
   before_action(only: :cancel) { require_permission!("sales.cancel") }
 
   def pos
+    
     @restore = []
     @form = {}
     load_pos_data
@@ -11,7 +12,7 @@ class SalesController < ApplicationController
 
   def search
     q = params[:q].to_s.strip
-    scope = Product.active.where("stock > 0").order(:name).limit(12)
+    scope = Product.active.where("stock > 0").order(:name).limit(20)
     if q.present?
       like = "%#{Product.sanitize_sql_like(q)}%"
       scope = scope.where("name LIKE :like OR sku LIKE :like OR barcode = :exact", like: like, exact: q)
@@ -24,6 +25,7 @@ class SalesController < ApplicationController
   end
 
   def index
+    
     scope = Sale.includes(:customer, :user).order(id: :desc)
     scope = scope.where("sales.created_at >= ?", Time.zone.parse(params[:from]).beginning_of_day) if valid_date?(params[:from])
     scope = scope.where("sales.created_at <= ?", Time.zone.parse(params[:to]).end_of_day) if valid_date?(params[:to])
