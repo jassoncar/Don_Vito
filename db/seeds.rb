@@ -32,12 +32,24 @@ begin
     role.permissions = Permission.where(name: permission_names)
   end
 
-  # --- Usuarios de demostración -----------------------------------------
-  [
-    ["Administrador", "admin@licoreria.test", "admin", "Admin12345!"],
-    ["Vendedor Demo", "staff@licoreria.test", "staff", "Staff12345!"],
-    ["Encargado Inventario", "inventario@licoreria.test", "inventory", "Inventario12345!"]
-  ].each do |name, email, slug, password|
+  # --- Usuarios --------------------------------------------------------
+  # SEED_PRODUCTION=1 crea solo el administrador (con ADMIN_EMAIL / ADMIN_PASSWORD) y omite los datos de demostración.
+  production_seed = ENV["SEED_PRODUCTION"] == "1"
+  if production_seed && ENV["ADMIN_PASSWORD"].to_s.length < 10
+    abort "Defina ADMIN_PASSWORD (mínimo 10 caracteres) para sembrar producción."
+  end
+
+  users = if production_seed
+            [["Administrador", ENV.fetch("ADMIN_EMAIL", "admin@licoreria.test"), "admin", ENV["ADMIN_PASSWORD"]]]
+          else
+            [
+              ["Administrador", "admin@licoreria.test", "admin", "Admin12345!"],
+              ["Vendedor Demo", "staff@licoreria.test", "staff", "Staff12345!"],
+              ["Encargado Inventario", "inventario@licoreria.test", "inventory", "Inventario12345!"]
+            ]
+          end
+
+  users.each do |name, email, slug, password|
     user = User.find_or_initialize_by(email: email)
     user.update!(name: name, password: password, role: Role.find_by!(slug: slug), is_active: true)
   end
@@ -52,6 +64,7 @@ begin
     "receipt_footer" => "¡Gracias por su compra! Beba con moderación."
   )
 
+  unless production_seed
   # --- Catálogo de demostración -----------------------------------------
   ["Ron", "Whisky", "Vodka", "Tequila", "Cerveza", "Vino", "Licores y cremas"].each do |name|
     Category.find_or_create_by!(name: name)
@@ -99,6 +112,7 @@ begin
       cost_price: cost, sale_price: price, tax_rate: 15, min_stock: min, is_active: true,
       initial_stock: stock
     )
+  end
   end
 ensure
   AuditLog.enabled = true

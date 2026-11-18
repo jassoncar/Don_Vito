@@ -1,8 +1,8 @@
 class Product < ApplicationRecord
   include Auditable
 
-  IMAGE_DIR = Rails.root.join("public", "uploads", "products").freeze
   MAX_IMAGE_SIZE = 2.megabytes
+  IMAGE_TYPES = { "jpg" => "image/jpeg", "png" => "image/png", "webp" => "image/webp" }.freeze
 
   attr_accessor :initial_stock # solo al crear: genera el movimiento de stock inicial
   attr_accessor :image_file    # archivo subido desde el formulario
@@ -11,6 +11,7 @@ class Product < ApplicationRecord
   belongs_to :category
   belongs_to :brand, optional: true
   belongs_to :supplier, optional: true
+  has_one :product_image, dependent: :delete
   has_many :stock_movements, dependent: :delete_all
   has_many :sale_items
   has_many :purchase_items
@@ -30,9 +31,9 @@ class Product < ApplicationRecord
   scope :active, -> { where(is_active: true) }
   scope :low_stock, -> { where("products.stock <= products.min_stock") }
 
-  before_save :persist_image
+  before_save :prepare_image
+  after_save :store_image
   after_create :register_initial_stock
-  after_destroy_commit :delete_image_file
 
   # Detecta el tipo real por los primeros bytes (no confía en la extensión ni en el Content-Type).
   def self.detect_image_extension(io)
@@ -49,8 +50,9 @@ class Product < ApplicationRecord
     stock <= min_stock
   end
 
+  # La columna `image` guarda un token de versión; los bytes viven en la tabla product_images.
   def image_url
-    "/uploads/products/#{image}" if image.present?
+    "/product_images/#{id}?v=#{image}" if image.present?
   end
 
   private
@@ -69,30 +71,26 @@ class Product < ApplicationRecord
     end
   end
 
-  def persist_image
+  def prepare_image
     if uploaded_image?
       extension = self.class.detect_image_extension(image_file)
-      filename = "#{SecureRandom.hex(12)}.#{extension}"
-      FileUtils.mkdir_p(IMAGE_DIR)
-      File.binwrite(IMAGE_DIR.join(filename), image_file.read)
-      previous = image_was
-      self.image = filename
-      remove_file(previous)
+      @pending_image = { content_type: IMAGE_TYPES.fetch(extension), data: image_file.read }
+      self.image = SecureRandom.hex(8)
     elsif remove_image.to_s == "1" && image.present?
-      remove_file(image)
+      @remove_stored_image = true
       self.image = nil
     end
   end
 
-  def delete_image_file
-    remove_file(image)
-  end
-
-  def remove_file(filename)
-    return if filename.blank?
-
-    path = IMAGE_DIR.join(File.basename(filename))
-    File.delete(path) if File.exist?(path)
+  def store_image
+    if @pending_image
+      record = ProductImage.find_or_initialize_by(product_id: id)
+      record.update!(content_type: @pending_image[:content_type], data: @pending_image[:data])
+      @pending_image = nil
+    elsif @remove_stored_image
+      ProductImage.where(product_id: id).delete_all
+      @remove_stored_image = nil
+    end
   end
 
   def register_initial_stock

@@ -7,3 +7,8 @@
 /vendor/bundle
 /public/uploads/products/*
 !/public/uploads/products/.keep
+
+# Despliegue (nunca subir credenciales ni respaldos)
+deploy/.env.production
+backups/
+*:Zone.Identifier
