@@ -52,3 +52,6 @@ docker compose down -v                                       # apaga y borra bas
   Administrador siempre tiene acceso total.
 - Impuesto (IVA) por producto; moneda y datos del negocio en Configuración.
 - Interfaz con Bootstrap 5 por CDN (se necesita internet en el navegador).
+
+## Despliegue en producción
+Ver `DEPLOY-AWS-VERCEL.md` (AWS RDS MySQL + Vercel) y los scripts de `deploy/`.

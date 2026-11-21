@@ -1,0 +1,7 @@
+# Evita que Windows convierta estos archivos a CRLF (rompe los scripts dentro de Docker).
+Dockerfile* text eol=lf
+*.sh text eol=lf
+bin/* text eol=lf
+Gemfile text eol=lf
+Gemfile.lock text eol=lf
+deploy/*.sh text eol=lf

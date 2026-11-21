@@ -7,6 +7,9 @@ default: &default
   port: <%= ENV.fetch("DB_PORT", 3306) %>
   username: <%= ENV.fetch("DB_USERNAME", "root") %>
   password: <%= ENV.fetch("DB_PASSWORD", "") %>
+<% if ENV["DB_SSL_MODE"].present? %>
+  ssl_mode: <%= ENV["DB_SSL_MODE"] %>
+<% end %>
 
 development:
   <<: *default

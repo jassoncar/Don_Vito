@@ -1,0 +1,26 @@
+FROM ruby:3.3-slim-bookworm
+
+# PORT=80 es el puerto por defecto que espera Vercel (se puede cambiar con la variable PORT del proyecto).
+# PIDFILE en /tmp porque el sistema de archivos de Vercel es de solo lectura (excepto /tmp).
+ENV RAILS_ENV=production \
+    BUNDLE_WITHOUT="development:test" \
+    PORT=80 \
+    PIDFILE=/tmp/puma.pid \
+    RAILS_MAX_THREADS=3 \
+    LANG=C.UTF-8
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential default-libmysqlclient-dev pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY Gemfile Gemfile.lock ./
+RUN sed -i 's/\r$//' Gemfile Gemfile.lock \
+    && bundle install --jobs 4 --retry 3 \
+    && rm -rf /usr/local/bundle/cache ~/.bundle/cache
+
+COPY . .
+
+EXPOSE 80
+CMD ["bundle", "exec", "puma", "-C", "config/puma.rb"]

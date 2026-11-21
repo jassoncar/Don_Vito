@@ -2,3 +2,7 @@ vendor/bundle
 log/*
 tmp/*
 .git
+.env
+public/uploads
+deploy
+backups

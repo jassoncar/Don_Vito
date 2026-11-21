@@ -15,6 +15,9 @@ Rails.application.routes.draw do
   post "products/import", to: "product_imports#create", as: :product_import
   get "products/import/template", to: "product_imports#template", as: :product_import_template
 
+  # Imágenes de productos (guardadas en la base de datos)
+  get "product_images/:id", to: "product_images#show", as: :product_image
+
   # CRUD genéricos
   resources :products, :categories, :brands, :suppliers, :customers, :users, :roles, except: :show
 
